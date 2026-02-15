@@ -1,5 +1,9 @@
 from flask import Flask, request, jsonify
 import yt_dlp
+import os
+
+# تحديث yt-dlp كل مرة يقلع السيرفر (مهم لتيك توك)
+os.system("pip install -U yt-dlp")
 
 app = Flask(__name__)
 
@@ -7,24 +11,30 @@ app = Flask(__name__)
 def home():
     return "TikTok Downloader API Running"
 
-@app.route("/download")
+@app.route("/dc", methods=["GET"])
 def download():
     url = request.args.get("url")
+
+    if not url:
+        return jsonify({"error": "No url provided"})
 
     ydl_opts = {
         'quiet': True,
         'noplaylist': True,
-        'format': 'mp4',
-        'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1'
-        }
+        'format': 'best',
     }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
-            video_url = info['url']
-            return jsonify({"video": video_url})
+            video_url = info["url"]
+            title = info.get("title", "video")
+
+            return jsonify({
+                "title": title,
+                "url": video_url
+            })
+
     except Exception as e:
         return jsonify({"error": str(e)})
 
