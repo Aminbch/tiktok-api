@@ -1,25 +1,26 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
+import requests
 import yt_dlp
 
 app = Flask(__name__)
-CORS(app)   # ← هذا هو الحل
+CORS(app)
 
 @app.route("/")
 def home():
     return "TikTok Downloader API Running"
 
-@app.route("/dc")
+@app.route("/download")
 def download():
     url = request.args.get("url")
 
     if not url:
-        return jsonify({"error": "No URL provided"})
+        return jsonify({"error": "No URL"}), 400
 
     ydl_opts = {
-        'quiet': True,
-        'noplaylist': True,
-        'format': 'mp4',
+        "quiet": True,
+        "noplaylist": True,
+        "format": "mp4"
     }
 
     try:
@@ -28,12 +29,15 @@ def download():
             video_url = info["url"]
             title = info.get("title", "video")
 
-        return jsonify({
-            "title": title,
-            "url": video_url
-        })
+        r = requests.get(video_url, stream=True)
+
+        return Response(
+            r.iter_content(chunk_size=1024),
+            content_type="video/mp4",
+            headers={
+                "Content-Disposition": f'attachment; filename="{title}.mp4"'
+            }
+        )
 
     except Exception as e:
         return jsonify({"error": str(e)})
-        
-app.run(host="0.0.0.0", port=10000)
