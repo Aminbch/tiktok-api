@@ -1,27 +1,25 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import yt_dlp
-import os
-
-# تحديث yt-dlp كل مرة يقلع السيرفر (مهم لتيك توك)
-os.system("pip install -U yt-dlp")
 
 app = Flask(__name__)
+CORS(app)   # ← هذا هو الحل
 
 @app.route("/")
 def home():
     return "TikTok Downloader API Running"
 
-@app.route("/dc", methods=["GET"])
+@app.route("/dc")
 def download():
     url = request.args.get("url")
 
     if not url:
-        return jsonify({"error": "No url provided"})
+        return jsonify({"error": "No URL provided"})
 
     ydl_opts = {
         'quiet': True,
         'noplaylist': True,
-        'format': 'best',
+        'format': 'mp4',
     }
 
     try:
@@ -30,13 +28,12 @@ def download():
             video_url = info["url"]
             title = info.get("title", "video")
 
-            return jsonify({
-                "title": title,
-                "url": video_url
-            })
+        return jsonify({
+            "title": title,
+            "url": video_url
+        })
 
     except Exception as e:
         return jsonify({"error": str(e)})
-
-if __name__ == "__main__":
-    app.run()
+        
+app.run(host="0.0.0.0", port=10000)
