@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-import yt_dlp
+import requests
 
 app = Flask(__name__)
 
@@ -12,27 +12,16 @@ def download():
     url = request.args.get("url")
 
     if not url:
-        return jsonify({"error": "no url"})
+        return jsonify({"error":"no url"})
 
-    ydl_opts = {
-        'quiet': True,
-        'noplaylist': True,
-        'format': 'mp4'
-    }
+    api = "https://www.tikwm.com/api/"
+    r = requests.post(api, data={"url":url})
+    data = r.json()
 
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            video = info["url"]
-            title = info.get("title", "video")
-
-        return jsonify({
-            "title": title,
-            "video": video
-        })
-
-    except Exception as e:
-        return jsonify({"error": str(e)})
+    if "data" in data and "play" in data["data"]:
+        return jsonify({"video": data["data"]["play"]})
+    else:
+        return jsonify({"error":"not found"})
 
 if __name__ == "__main__":
     app.run()
